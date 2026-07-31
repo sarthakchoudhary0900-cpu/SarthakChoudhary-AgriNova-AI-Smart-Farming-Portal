@@ -20,24 +20,39 @@ export function Signup() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !email || !password) return;
+    
     if (password.length < 6) {
       toast('Password must be at least 6 characters.', 'error');
       return;
     }
+
     setLoading(true);
-    const { error } = await signUp(email, password, fullName);
-    setLoading(false);
-    if (error) {
-      toast(error, 'error');
-    } else {
-      toast('Account created! Welcome to AgriNova AI.', 'success');
-      navigate('/dashboard');
+
+    try {
+      const { error } = await signUp(email, password, fullName);
+      
+      if (error) {
+        toast(error, 'error');
+      } else {
+        toast('Account created! Welcome to AgriNova AI.', 'success');
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
+      console.error('Signup Error:', err);
+      toast(err.message || 'Failed to reach authentication server.', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleGoogle = async () => {
-    const { error } = await signInWithGoogle();
-    if (error) toast(error, 'error');
+  const handleGoogle = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Extra protection against form submit
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) toast(error, 'error');
+    } catch (err: any) {
+      toast(err.message || 'Google Auth failed', 'error');
+    }
   };
 
   return (
@@ -135,7 +150,8 @@ export function Signup() {
             <div className="flex-1 h-px bg-forest-200/40 dark:bg-brand-400/10" />
           </div>
 
-          <button onClick={handleGoogle} className="btn-ghost w-full">
+          {/* ADDED type="button" HERE */}
+          <button type="button" onClick={handleGoogle} className="btn-ghost w-full">
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
