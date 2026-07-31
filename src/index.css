@@ -1,0 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply font-sans antialiased text-forest-950 bg-gradient-to-br from-brand-50 via-white to-forest-100;
+    min-height: 100vh;
+  }
+  .dark body {
+    @apply text-brand-50 from-forest-950 via-forest-900 to-brand-950;
+  }
+  h1, h2, h3, h4, h5 {
+    @apply font-display;
+  }
+  ::selection {
+    @apply bg-brand-400/40 text-forest-950;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/60 backdrop-blur-xl border border-white/40 shadow-glass rounded-3xl;
+  }
+  .dark .glass {
+    @apply bg-forest-900/50 border-brand-400/15 shadow-glass;
+  }
+  .glass-soft {
+    @apply bg-white/40 backdrop-blur-lg border border-white/30 rounded-2xl;
+  }
+  .dark .glass-soft {
+    @apply bg-forest-900/40 border-brand-400/10;
+  }
+  .glass-input {
+    @apply bg-white/70 backdrop-blur-md border border-forest-200/60 rounded-xl px-4 py-3 text-forest-900 placeholder-forest-400 focus:outline-none focus:ring-2 focus:ring-brand-400/60 focus:border-brand-400 transition;
+  }
+  .dark .glass-input {
+    @apply bg-forest-900/60 border-brand-400/20 text-brand-50 placeholder-brand-200/40;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-brand-600 to-forest-600 shadow-glow hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all duration-200;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-forest-800 bg-white/50 backdrop-blur-md border border-forest-200/60 hover:bg-white/80 hover:border-brand-400 transition-all duration-200;
+  }
+  .dark .btn-ghost {
+    @apply text-brand-50 bg-forest-900/40 border-brand-400/20 hover:bg-forest-800/60;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-brand-100 text-forest-700 border border-brand-200;
+  }
+  .dark .chip {
+    @apply bg-brand-900/50 text-brand-200 border-brand-700/40;
+  }
+  .skeleton {
+    @apply bg-gradient-to-r from-forest-100 via-brand-100 to-forest-100 bg-[length:1000px_100%] animate-shimmer rounded-lg;
+    background-position: -1000px 0;
+  }
+  .dark .skeleton {
+    @apply from-forest-800 via-brand-900/40 to-forest-800;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-brand-300/60 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-brand-400/80;
+}
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-brand-700/60;
+}
