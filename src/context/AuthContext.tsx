@@ -26,12 +26,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (uid: string) => {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).maybeSingle();
-    if (error) {
-      console.error('Profile fetch error:', error.message);
+    try {
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).maybeSingle();
+      if (error) {
+        console.error('Profile fetch error:', error.message);
+        return null;
+      }
+      return data as Profile | null;
+    } catch (err) {
+      console.error('Fetch profile exception:', err);
       return null;
     }
-    return data as Profile | null;
   };
 
   useEffect(() => {
@@ -61,48 +66,85 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  // 1. SIGN UP (WITH SAFE PROFILE CREATION)
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName } },
-    });
-    if (error) return { error: error.message };
-    if (data.user) {
-      await supabase.from('profiles').upsert({
-        id: data.user.id,
+    try {
+      const { data, error } = await supabase.auth.signUp({
         email,
-        full_name: fullName,
+        password,
+        options: { data: { full_name: fullName } },
       });
+
+      if (error) return { error: error.message };
+
+      // Safely upsert profile ONLY if an active session exists (prevents RLS error)
+      if (data.session && data.user) {
+        const { error: profileError } = await supabase.from('profiles').upsert({
+          id: data.user.id,
+          email,
+          full_name: fullName,
+        });
+        if (profileError) console.error('Profile upsert error:', profileError.message);
+      }
+
+      return { error: null };
+    } catch (err: any) {
+      console.error('Signup error:', err);
+      return { error: err.message || 'An unexpected error occurred during signup.' };
     }
-    return { error: null };
   };
 
+  // 2. SIGN IN
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      return { error: error?.message ?? null };
+    } catch (err: any) {
+      console.error('SignIn error:', err);
+      return { error: err.message || 'An unexpected error occurred during sign in.' };
+    }
   };
 
+  // 3. GOOGLE LOGIN
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin + '/dashboard' },
-    });
-    return { error: error?.message ?? null };
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { 
+          redirectTo: `${window.location.origin}/dashboard` 
+        },
+      });
+      return { error: error?.message ?? null };
+    } catch (err: any) {
+      console.error('Google Auth error:', err);
+      return { error: err.message || 'Failed to initiate Google sign-in.' };
+    }
   };
 
+  // 4. RESET PASSWORD
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/login',
-    });
-    return { error: error?.message ?? null };
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/login`,
+      });
+      return { error: error?.message ?? null };
+    } catch (err: any) {
+      return { error: err.message || 'Password reset request failed.' };
+    }
   };
 
+  // 5. SIGN OUT
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('SignOut error:', err);
+    } finally {
+      setProfile(null);
+    }
   };
 
+  // 6. REFRESH PROFILE
   const refreshProfile = async () => {
     if (user) {
       const p = await fetchProfile(user.id);
@@ -110,17 +152,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // 7. UPDATE PROFILE
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!user) return { error: 'Not signed in' };
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', user.id)
-      .select()
-      .maybeSingle();
-    if (error) return { error: error.message };
-    if (data) setProfile(data as Profile);
-    return { error: null };
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', user.id)
+        .select()
+        .maybeSingle();
+
+      if (error) return { error: error.message };
+      if (data) setProfile(data as Profile);
+      return { error: null };
+    } catch (err: any) {
+      return { error: err.message || 'Failed to update profile.' };
+    }
   };
 
   return (
